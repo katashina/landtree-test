@@ -1,4 +1,4 @@
-const addCompany = require('./landtree').addCompany;
+const { addCompany, addLandRecord, buildOwnershipTree } = require('./landtree');
 
 describe('when adding a company to an empty db', () =>{
   it('should update the db with the new entry', () => {
@@ -10,7 +10,7 @@ describe('when adding a company to an empty db', () =>{
     };
 
     addCompany(db, entry);
-
+    const expectedResult = Object.assign(entry, { children: [] });
     expect(db[entry.id]).toEqual(entry);
   });
 });
@@ -61,11 +61,105 @@ describe('when adding a company and the record exists', () => {
     };
 
     addCompany(db, entry);
-    console.log(JSON.stringify(db));
 
     expect(db[entry.id].name).toEqual(entry.name);
     expect(db[entry.id].parentId).toEqual(entry.parentId);
     expect(db[entry.id].children.length).toEqual(1);
     expect(db[entry.id].children).toContain('XYZ');
   })
+});
+
+describe('when adding land ownership for a company that does not exist', () =>{
+  it('should set the count', () => {
+    const db = {};
+    const entry = {
+      landId: 'LAND123',
+      companyId: 'BAR'
+    };
+
+    addLandRecord(db, entry);
+
+    expect(db[entry.companyId]).toEqual(1);
+  });
+});
+
+describe('when adding land ownership for a company that does exist', () => {
+  it('should update the count', () => {
+    const db = {};
+    const entry = {
+      landId: 'LAND123',
+      companyId: 'BAR'
+    };
+
+    db[entry.companyId] = 9;
+
+    addLandRecord(db, entry);
+
+    expect(db[entry.companyId]).toEqual(10);
+  });
+});
+
+describe('when building ownership tree from root', () => {
+  it('should print out the compnay id, name and ownership amount', () => {
+    const companyDb = {};
+    const landDb = {};
+
+    const company = {
+      id: 'FOO',
+      name: 'FOO Ltd'
+    };
+
+    const land = {
+      landId: 'LAND123',
+      companyId: company.id
+    };
+
+    addCompany(companyDb, company);
+    addLandRecord(landDb, land);
+
+    const result = buildOwnershipTree(companyDb, landDb, company.id);
+    expect(result).toEqual(['FOO; FOO Ltd; owner of 1 land parcel']);
+  });
+
+  it('should print out the parent compnay id, name and ownership amount', () => {
+    const companyDb = {};
+    const landDb = {};
+
+    const company = {
+      id: 'FOO',
+      name: 'FOO Ltd',
+      parentId: 'BAR'
+    };
+
+    addCompany(companyDb, company);
+    addCompany(companyDb, {
+      id: 'BAR',
+      name: 'BAR GROUP'
+    });
+    addCompany(companyDb, {
+      id: 'FIZZ',
+      name: 'FIZZ Ltd',
+      parentId: 'BAR'
+    });
+
+    addCompany(companyDb, {
+      id: 'BUZZ',
+      name: 'BUZZ Ltd',
+      parentId: 'FOO'
+    });
+
+    landDb[company.id] = 4;
+    landDb[company.parentId] = 6;
+    landDb['FIZZ'] = 5;
+    landDb['BUZZ'] = 5;
+
+    const result = buildOwnershipTree(companyDb, landDb, company.id);
+
+    expect(result).toEqual( [
+      'BAR; BAR GROUP; owner of 20 land parcels',
+      '| - FOO; FOO Ltd; owner of 4 land parcels ***',
+      '| | - BUZZ; BUZZ Ltd; ownder of 5 land parcels',
+      '| - FIZZ; FIZZ Ltd; owner of 5 land parcels '
+    ]);
+  });
 });
