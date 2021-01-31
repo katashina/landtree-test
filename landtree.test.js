@@ -150,4 +150,20 @@ describe('when building ownership tree from root', () => {
       '| | | - FIFI; FIFI Ltd; owner of 1 land parcel'
     ]);
   });
+
+  it('should not print out undefied/NaN when a company does not have an entry in the landDb', () => {
+    const companyDb = {};
+    const landDb = {};
+
+    addCompany(companyDb, { id: 'FOO', name: 'FOO Ltd', parentId: 'BAR'});
+    addCompany(companyDb, { id: 'BAR', name: 'BAR GROUP' });
+
+    landDb['FOO'] = 4;
+
+    const result = buildOwnershipTree(companyDb, landDb, 'FOO');
+    expect(result).toEqual( [
+      'BAR; BAR GROUP; owner of 4 land parcels',
+      '| - FOO; FOO Ltd; owner of 4 land parcels ***'
+    ]);
+  })
 });
