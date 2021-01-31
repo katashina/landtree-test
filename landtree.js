@@ -15,7 +15,7 @@ const addLandRecord = (landDb, entry) => {
 const buildOwnershipTree = (companyDb, landDb, companyId) => {
   let company = companyDb[companyId],
       rootCount  = landDb[companyId],
-      counterLookup  = {},
+      countLookup  = {},
       entries = [];
 
   if (!company.parentId)
@@ -30,13 +30,13 @@ const buildOwnershipTree = (companyDb, landDb, companyId) => {
   return entries;
 
   function parcelCount(compId) {
-    if (counterLookup[compId])
-      return counterLookup[compId];
+    if (countLookup[compId])
+      return countLookup[compId];
 
     const comp = companyDb[compId];
-    let count = landDb[compId];
+    let count = landDb[compId] || 0;
     comp.children.forEach(child => count += parcelCount(child));
-    counterLookup[compId] = count;
+    countLookup[compId] = count;
 
     return count;
   }
