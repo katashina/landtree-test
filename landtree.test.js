@@ -125,41 +125,29 @@ describe('when building ownership tree from root', () => {
     const companyDb = {};
     const landDb = {};
 
-    const company = {
-      id: 'FOO',
-      name: 'FOO Ltd',
-      parentId: 'BAR'
-    };
+    addCompany(companyDb, { id: 'FOO', name: 'FOO Ltd', parentId: 'BAR'});
+    addCompany(companyDb, { id: 'BAR', name: 'BAR GROUP' });
+    addCompany(companyDb, { id: 'FIZZ', name: 'FIZZ Ltd', parentId: 'BAR' });
+    addCompany(companyDb, { id: 'BUZZ', name: 'BUZZ Ltd', parentId: 'FOO' });
+    addCompany(companyDb, { id: 'LULU', name: 'LULU Ltd', parentId: 'FIZZ' });
+    addCompany(companyDb, { id: 'FIFI', name: 'FIFI Ltd', parentId: 'LULU' });
 
-    addCompany(companyDb, company);
-    addCompany(companyDb, {
-      id: 'BAR',
-      name: 'BAR GROUP'
-    });
-    addCompany(companyDb, {
-      id: 'FIZZ',
-      name: 'FIZZ Ltd',
-      parentId: 'BAR'
-    });
-
-    addCompany(companyDb, {
-      id: 'BUZZ',
-      name: 'BUZZ Ltd',
-      parentId: 'FOO'
-    });
-
-    landDb[company.id] = 4;
-    landDb[company.parentId] = 6;
+    landDb['FOO'] = 4;
+    landDb['BAR'] = 6;
     landDb['FIZZ'] = 5;
     landDb['BUZZ'] = 5;
+    landDb['LULU'] = 2;
+    landDb['FIFI'] = 1;
 
-    const result = buildOwnershipTree(companyDb, landDb, company.id);
+    const result = buildOwnershipTree(companyDb, landDb, 'FOO');
 
     expect(result).toEqual( [
-      'BAR; BAR GROUP; owner of 20 land parcels',
-      '| - FOO; FOO Ltd; owner of 4 land parcels ***',
-      '| | - BUZZ; BUZZ Ltd; ownder of 5 land parcels',
-      '| - FIZZ; FIZZ Ltd; owner of 5 land parcels '
+      'BAR; BAR GROUP; owner of 23 land parcels',
+      '| - FOO; FOO Ltd; owner of 9 land parcels ***',
+      '| | - BUZZ; BUZZ Ltd; owner of 5 land parcels',
+      '| - FIZZ; FIZZ Ltd; owner of 8 land parcels',
+      '| | - LULU; LULU Ltd; owner of 3 land parcels',
+      '| | | - FIFI; FIFI Ltd; owner of 1 land parcel'
     ]);
   });
 });

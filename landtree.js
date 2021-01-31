@@ -15,35 +15,44 @@ const addLandRecord = (landDb, entry) => {
 const buildOwnershipTree = (companyDb, landDb, companyId) => {
   let company = companyDb[companyId],
       rootCount  = landDb[companyId],
-      parentNodes  = {},
+      counterLookup  = {},
       entries = [];
 
   if (!company.parentId)
     return [`${company.id}; ${company.name}; owner of ${rootCount} land parcel${rootCount>1 ? 's': ''}`];
 
   while (company.parentId) {
-    let parent = companyDb[company.parentId],
-        parentCount  = landDb[parent.id];
-    let totalCount = parent.children.map(child => landDb[child]).reduce((acc, val) => acc + val, parentCount);
-    parentNodes[parent.id] = totalCount;
-    // rootCount += totalCount;
-    company = parent;
+    company = companyDb[company.parentId];
   }
 
-  entries = [`${company.id}; ${company.name}; owner of ${parentNodes[company.id]} land parcel${rootCount>1 ? 's': ''}`];
-  company.children.forEach(childId => {
-    entries.push(subtree(childId, 1));
-  });
+  subtree(company.id, 0);
 
   return entries;
 
+  function parcelCount(compId) {
+    if (counterLookup[compId])
+      return counterLookup[compId];
+
+    const comp = companyDb[compId];
+    let count = landDb[compId];
+    comp.children.forEach(child => count += parcelCount(child));
+    counterLookup[compId] = count;
+
+    return count;
+  }
 
   function subtree(compId, level) {
     const comp = companyDb[compId];
-    const count = parentNodes[compId] || landDb[compId];
-    const result = `${'| '.repeat(level)}- ${comp.id}; ${comp.name}; owner of ${count} land parcel${count>1 ? 's': ''} ${ comp.id == companyId ? '***': ''}`;
-    comp.children.forEach(element => subtree(element, level++));
-    return result;
+    const count = parcelCount(compId);
+    let info = `${comp.name}; owner of ${count} land parcel${count>1 ? 's': ''}${ comp.id == companyId ? ' ***': ''}`;
+    if (level == 0)
+      info = `${comp.id}; ` + info;
+    else
+      info  = `${'| '.repeat(level)}- ${comp.id}; ` + info;
+
+    level++;
+    entries.push(info);
+    comp.children.forEach(element => subtree(element, level));
   }
 }
 
