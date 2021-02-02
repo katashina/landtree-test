@@ -14,12 +14,12 @@ const addLandRecord = (landDb, entry) => {
 
 const buildOwnershipTree = (companyDb, landDb, companyId) => {
   let company = companyDb[companyId],
-      rootCount  = landDb[companyId],
+      count  = landDb[companyId] || 0,
       countLookup  = {},
       entries = [];
 
   if (!company.parentId)
-    return [`${company.id}; ${company.name}; owner of ${rootCount} land parcel${rootCount>1 ? 's': ''}`];
+    return [`${company.id}; ${company.name}; owner of ${count} land parcel${count>1 ? 's': ''}`];
 
   while (company.parentId) {
     company = companyDb[company.parentId];

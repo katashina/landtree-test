@@ -1,9 +1,25 @@
 #!/usr/bin/env node
 const fs = require("fs");
+const yargs = require('yargs');
+const { hideBin } = require('yargs/helpers');
+
 const { addCompany, addLandRecord, buildOwnershipTree } = require('../landtree');
 
 const companyDb = {},
       landDb = {};
+
+const options = yargs(hideBin(process.argv))
+  .usage('Usage: $0 --mode=<mode> <companyId>')
+  .option('mode', {
+    alias: 'm',
+    describe: 'How to display the tree',
+    type: 'string',
+    default:'expand',
+    choices: ['from_root', 'expand']
+  })
+  .argv;
+
+  console.log(options._);
 
 fs.readFileSync("./company_relations.csv", "utf8")
   .split("\n")
@@ -21,6 +37,10 @@ fs.readFileSync("./land_ownership.csv", "utf8")
     addLandRecord(landDb, {landId, companyId})
   });
 
-const result = buildOwnershipTree(companyDb, landDb, 'C101307938502');
+let result = null;
 
-result.forEach(entry => console.log(entry));
+if (options.mode == 'from_root' && options._.length > 0) {
+  result = buildOwnershipTree(companyDb, landDb, options._[0]);
+  result.forEach(entry => console.log(entry));
+}
+
